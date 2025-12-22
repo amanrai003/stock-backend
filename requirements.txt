@@ -2,8 +2,12 @@ asgiref==3.11.0
 Django==6.0
 django-cors-headers==4.9.0
 djangorestframework==3.16.1
+greenlet==3.3.0
 gunicorn==23.0.0
 packaging==25.0
+playwright==1.57.0
+pyee==13.0.0
 pytz==2025.2
 sqlparse==0.5.4
+typing_extensions==4.15.0
 tzdata==2025.3

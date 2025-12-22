@@ -1,3 +1,4 @@
+from playwright.sync_api import sync_playwright
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -8,7 +9,11 @@ from decimal import Decimal
 import stocks
 from .models import StockTrade, Portfolio
 from .serializers import StockTradeSerializer, PortfolioSerializer
-
+from django.http import HttpResponse
+from rest_framework.decorators import action
+from decimal import Decimal
+import tempfile
+import os
 
 class StockTradeViewSet(viewsets.ModelViewSet):
     """
@@ -107,6 +112,31 @@ class StockTradeViewSet(viewsets.ModelViewSet):
                 {'error': f'Stock trade with symbol {symbol} not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+
+    @action(detail=False, methods=["get"])
+    def download_report_image(self, request):
+        # 1️⃣ Generate SAME HTML
+        html_content = self.download_report(request).content.decode("utf-8")
+
+        # 2️⃣ Render HTML → Image using Playwright
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            page = browser.new_page(viewport={"width": 1800, "height": 2000})
+
+            page.set_content(html_content, wait_until="networkidle")
+
+            image_bytes = page.screenshot(
+                full_page=True,
+                type="png"
+            )
+
+            browser.close()
+
+        # 3️⃣ Return Image
+        response = HttpResponse(image_bytes, content_type="image/png")
+        response["Content-Disposition"] = 'attachment; filename="portfolio_report.png"'
+        return response
 
    # ... inside StockTradeViewSet ...
 
@@ -469,3 +499,4 @@ def format_number(value):
         return f"{clean_number(value):,.2f}"
     except (InvalidOperation, ValueError):
         return "0.00"
+
