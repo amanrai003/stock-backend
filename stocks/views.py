@@ -187,14 +187,15 @@ class StockTradeViewSet(viewsets.ModelViewSet):
         }}
         body {{
             font-family: Arial, sans-serif;
+            padding: 20px;
             background-color: #f5f5f5;
         }}
-    
         .container {{
-            width: 2600px;   /* 👈 increase width */
+            max-width: 1400px;
             margin: 0 auto;
             background-color: white;
             padding: 30px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }}
         .header {{
             text-align: center;
@@ -212,11 +213,10 @@ class StockTradeViewSet(viewsets.ModelViewSet):
             color: #666;
         }}
         table {{
-            
             width: 100%;
-            table-layout: fixed;   /* 👈 important */
             border-collapse: collapse;
-
+            margin-top: 20px;
+            font-size: 12px;
         }}
         th {{
             background-color: #4a90e2;
@@ -352,6 +352,7 @@ class StockTradeViewSet(viewsets.ModelViewSet):
                 <tr class="total-row">
                     <td class="symbol">TOTAL</td>
                     <td>{int(clean_number(stock.total_buy_qty)):,}</td>
+
                     <td>{format_number(total_buy_value)}</td>
                     <td>{total_sell_qty:,}</td>
                     <td>{format_number(total_sell_value)}</td>
