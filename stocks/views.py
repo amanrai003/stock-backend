@@ -1,5 +1,5 @@
-from playwright.sync_api import sync_playwright
 from rest_framework import status, viewsets
+# from playwright.sync_api import sync_playwright
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -114,33 +114,33 @@ class StockTradeViewSet(viewsets.ModelViewSet):
             )
 
 
-    @action(detail=False, methods=["get"])
-    def download_report_image(self, request):
-        # 1️⃣ Generate SAME HTML
-        html_content = self.download_report(request).content.decode("utf-8")
+    # @action(detail=False, methods=["get"])
+    # def download_report_image(self, request):
+    #     # 1️⃣ Generate SAME HTML
+    #     html_content = self.download_report(request).content.decode("utf-8")
 
-        # 2️⃣ Render HTML → Image using Playwright
-        with sync_playwright() as p:
-            browser = p.chromium.launch()
-            page = browser.new_page(viewport={"width": 1800, "height": 2000})
+    #     # 2️⃣ Render HTML → Image using Playwright
+    #     with sync_playwright() as p:
+    #         browser = p.chromium.launch()
+    #         page = browser.new_page(viewport={"width": 1800, "height": 2000})
 
-            page.set_content(html_content, wait_until="networkidle")
+    #         page.set_content(html_content, wait_until="networkidle")
 
-            image_bytes = page.screenshot(
-                full_page=True,
-                type="png"
-            )
+    #         image_bytes = page.screenshot(
+    #             full_page=True,
+    #             type="png"
+    #         )
 
-            browser.close()
+    #         browser.close()
 
-        # 3️⃣ Return Image
-        response = HttpResponse(image_bytes, content_type="image/png")
-        response["Content-Disposition"] = 'attachment; filename="portfolio_report.png"'
-        return response
+    #     # 3️⃣ Return Image
+    #     response = HttpResponse(image_bytes, content_type="image/png")
+    #     response["Content-Disposition"] = 'attachment; filename="portfolio_report.png"'
+    #     return response
 
    # ... inside StockTradeViewSet ...
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], permission_classes=[])
     def download_report(self, request):
         """Download HTML report of all stock trades"""
         stocks = StockTrade.objects.all().order_by('symbol')
