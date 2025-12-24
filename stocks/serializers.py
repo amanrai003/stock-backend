@@ -31,6 +31,7 @@ class StockTradeSerializer(serializers.ModelSerializer):
             'sell_price',
             'total_sell_value',
             'balance_qty',
+            'ltp',
             'acquisition_cost',
             'percent_holding',
             'current_value',
@@ -74,6 +75,8 @@ class StockTradeSerializer(serializers.ModelSerializer):
             attrs['buy_price'] = Decimal(str(attrs['buy_price'])).quantize(Decimal('0.01'))
         if 'sell_price' in attrs:
             attrs['sell_price'] = Decimal(str(attrs['sell_price'])).quantize(Decimal('0.01'))
+        if 'ltp' in attrs:
+            attrs['ltp'] = Decimal(str(attrs['ltp'])).quantize(Decimal('0.01'))
         if 'wk_52_high' in attrs:
             attrs['wk_52_high'] = Decimal(str(attrs['wk_52_high'])).quantize(Decimal('0.01'))
         if 'wk_52_low' in attrs:

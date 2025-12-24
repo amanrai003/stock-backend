@@ -230,7 +230,6 @@ class StockTradeViewSet(viewsets.ModelViewSet):
         .header {{
             text-align: center;
             margin-bottom: 30px;
-            border-bottom: 2px solid #333;
             padding-bottom: 20px;
         }}
         .header h1 {{
@@ -249,7 +248,7 @@ class StockTradeViewSet(viewsets.ModelViewSet):
             font-size: 12px;
         }}
         th {{
-            background-color: #4a90e2;
+            background-color: #331866;
             color: white;
             padding: 12px 8px;
             text-align: center;
@@ -295,13 +294,40 @@ class StockTradeViewSet(viewsets.ModelViewSet):
                 padding: 20px;
             }}
         }}
+        # inside the <style> block
+        td {{
+            padding: 10px 8px;
+            text-align: center;
+            color: #6c757d !important; /* grey text for all cells */
+        }}
+        .symbol {{
+            text-align: left;
+            font-weight: bold;
+            color: #0d6efd; /* blue for symbols */
+        }}
+        .ltp {{
+            color: #0d6efd; /* blue for LTP */
+        }}
+        .unrealised {{
+            color: #28a745; /* green for unrealised profit/loss (0.00) */
+        }}
+        .cell-color  {{
+        text-align: center;
+            color: #3B3B3D; 
+        }}
+        .positive {{
+            color: #28a745;
+        }}
+        .negative {{
+            color: #dc3545;
+        }}
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>{portfolio_name}</h1>
-            <div class="date">{date_time}</div>
+            <div style="text-align: left">CURRENT PORTFOLIO: {portfolio_name.upper()}</h1>
+            <div style="text-align: right" class="date">{date_time}</div>
         </div>
         <table>
             <thead>
@@ -356,20 +382,20 @@ class StockTradeViewSet(viewsets.ModelViewSet):
             html += f"""
                 <tr>
                     <td class="symbol">{stock.symbol}</td>
-                    <td>{to_int(stock.total_buy_qty):,}</td>
-                    <td>{format_number(stock.total_buy_value)}</td>
-                    <td>{to_int(stock.total_sell_qty):,}</td>
-                    <td>{format_number(stock.total_sell_value)}</td>
-                    <td>{to_int(stock.balance_qty):,}</td>
-                    <td>{format_number(stock.acquisition_cost)}</td>
-                    <td>{format_number(stock.percent_holding)}</td>
-                    <td>{format_number(ltp)}</td>
-                    <td>{format_number(stock.current_value)}</td>
-                    <td class="{profit_class}">{profit_sign}{format_number(realised_pl)}</td>
-                    <td>{format_number(unrealised_pl)}</td>
-                    <td class="{profit_class}">{profit_sign}{format_number(total_pl)}</td>
-                    <td>{format_number(stock.wk_52_high)}</td>
-                    <td>{format_number(stock.wk_52_low)}</td>
+                    <td class="cell-color">{to_int(stock.total_buy_qty):,}</td>
+                    <td class="cell-color">{format_number(stock.total_buy_value)}</td>
+                    <td class="cell-color">{to_int(stock.total_sell_qty):,}</td>
+                    <td class="cell-color">{format_number(stock.total_sell_value)}</td>
+                    <td class="cell-color">{to_int(stock.balance_qty):,}</td>
+                    <td class="cell-color">{format_number(stock.acquisition_cost)}</td>
+                    <td class="cell-color">{format_number(stock.percent_holding)}</td>
+                    <td class="ltp" style="text-align: center"  >{format_number(ltp)}</td>
+                    <td class="cell-color">{format_number(stock.current_value)}</td>
+                    <td class="cell-color">{profit_sign}{format_number(realised_pl)}</td>
+                    <td class="unrealised" style="text-align: center">{format_number(unrealised_pl)}</td>
+                    <td class="{profit_class}" style="text-align: center">{profit_sign}{format_number(total_pl)}</td>
+                    <td class="cell-color" style="text-align: center">{format_number(stock.wk_52_high)}</td>
+                    <td class="cell-color" style="text-align: center">{format_number(stock.wk_52_low)}</td>
                 </tr>"""
         
         # Add total row
@@ -380,22 +406,22 @@ class StockTradeViewSet(viewsets.ModelViewSet):
         
         html += f"""
                 <tr class="total-row">
-                    <td class="symbol">TOTAL</td>
-                    <td>{int(clean_number(stock.total_buy_qty)):,}</td>
+                    <td style="text-align: left">TOTAL</td>
+                    <td style="text-align: center">{int(clean_number(stock.total_buy_qty)):,}</td>
 
-                    <td>{format_number(total_buy_value)}</td>
-                    <td>{total_sell_qty:,}</td>
-                    <td>{format_number(total_sell_value)}</td>
-                    <td>0</td>
-                    <td>0.00</td>
-                    <td>0.00</td>
-                    <td>-</td>
-                    <td>0.00</td>
-                    <td class="{profit_class}">{profit_sign}{format_number(total_realised_profit_loss)}</td>
-                    <td>{format_number(total_unrealised_pl)}</td>
-                    <td class="{profit_class}">{profit_sign}{format_number(total_profit_loss)}</td>
-                    <td>-</td>
-                    <td>-</td>
+                    <td style="text-align: center">{format_number(total_buy_value)}</td>
+                    <td style="text-align: center">{total_sell_qty:,}</td>
+                    <td style="text-align: center">{format_number(total_sell_value)}</td>
+                    <td style="text-align: center">0</td>
+                    <td style="text-align: center">0.00</td>
+                    <td style="text-align: center">0.00</td>
+                    <td style="text-align: center"></td>
+                    <td style="text-align: center">0.00</td>
+                    <td style="text-align: center" class="{profit_class}">{profit_sign}{format_number(total_realised_profit_loss)}</td>
+                    <td style="text-align: center">{format_number(total_unrealised_pl)}</td>
+                    <td style="text-align: center" class="{profit_class}">{profit_sign}{format_number(total_profit_loss)}</td>
+                    <td style="text-align: center"></td>
+                    <td style="text-align: center"></td>
                 </tr>
             </tbody>
         </table>

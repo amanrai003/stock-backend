@@ -61,6 +61,13 @@ class StockTrade(models.Model):
         default=0,
         help_text="Balance quantity (always saved as 0)"
     )
+    ltp = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(0)],
+        help_text="ltp price"
+    )
     acquisition_cost = models.DecimalField(
         max_digits=12, 
         decimal_places=2, 
