@@ -170,6 +170,7 @@ class StockTradeViewSet(viewsets.ModelViewSet):
         # ---- PORTFOLIO META ----
         if stocks.exists():
             first_stock = stocks.first()
+            description = first_stock.portfolio.description
             portfolio_name = (
                 first_stock.portfolio.name
                 if first_stock.portfolio
@@ -188,6 +189,7 @@ class StockTradeViewSet(viewsets.ModelViewSet):
             total_sell_value,
             total_realised_profit_loss,
             portfolio_name,
+            description,
             date_time,
         )
 
@@ -198,168 +200,359 @@ class StockTradeViewSet(viewsets.ModelViewSet):
 # ... rest of StockTradeViewSet ...
     
     def _generate_html_report(self, stocks, total_buy_qty, total_buy_value, 
-                             total_sell_qty, total_sell_value, total_realised_profit_loss,
-                             portfolio_name, date_time):
+                            total_sell_qty, total_sell_value, total_realised_profit_loss,
+                            portfolio_name, description, date_time):
         """Generate HTML report content"""
         
-        
         html = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Portfolio Report</title>
-    <style>
-        * {{
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }}
-        body {{
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }}
-        .container {{
-            max-width: 1400px;
-            margin: 0 auto;
-            background-color: white;
-            padding: 30px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }}
-        .header {{
-            text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-        }}
-        .header h1 {{
-            font-size: 24px;
-            color: #333;
-            margin-bottom: 10px;
-        }}
-        .header .date {{
-            font-size: 14px;
-            color: #666;
-        }}
-        table {{
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            font-size: 12px;
-        }}
-        th {{
-            background-color: #331866;
-            color: white;
-            padding: 12px 8px;
-            text-align: center;
-            font-weight: bold;
-            border: 1px solid #333;
-        }}
-        td {{
-            padding: 10px 8px;
-            text-align: right;
-            border: 1px solid #ddd;
-        }}
-        tr:nth-child(even) {{
-            background-color: #f9f9f9;
-        }}
-        tr:hover {{
-            background-color: #f0f0f0;
-        }}
-        .symbol {{
-            text-align: left;
-            font-weight: bold;
-        }}
-        .total-row {{
-            background-color: #e8f4f8 !important;
-            font-weight: bold;
-            border-top: 2px solid #333;
-        }}
-        .total-row td {{
-            font-weight: bold;
-        }}
-        .positive {{
-            color: #28a745;
-        }}
-        .negative {{
-            color: #dc3545;
-        }}
-        @media print {{
-            body {{
-                background-color: white;
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Stock Portfolio Report</title>
+        <style>
+            * {{
+                margin: 0;
                 padding: 0;
+                box-sizing: border-box;
+            }}
+            body {{
+                font-family: Arial, sans-serif;
+                background-color: #f5f5f5;
+                width: 100%;
+                overflow-x: hidden;
             }}
             .container {{
-                box-shadow: none;
-                padding: 20px;
+                width: 100%;
+                background-color: white;
+                padding: 15px;
             }}
-        }}
-        # inside the <style> block
-        td {{
-            padding: 10px 8px;
-            text-align: center;
-            color: #6c757d !important; /* grey text for all cells */
-        }}
-        .symbol {{
-            text-align: left;
-            font-weight: bold;
-            color: #0d6efd; /* blue for symbols */
-        }}
-        .ltp {{
-            color: #0d6efd; /* blue for LTP */
-        }}
-        .unrealised {{
-            color: #28a745; /* green for unrealised profit/loss (0.00) */
-        }}
-        .cell-color  {{
-        text-align: center;
-            color: #3B3B3D; 
-        }}
-        .positive {{
-            color: #28a745;
-        }}
-        .negative {{
-            color: #dc3545;
-        }}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div style="text-align: left">CURRENT PORTFOLIO: {portfolio_name.upper()}</h1>
-            <div style="text-align: right" class="date">{date_time}</div>
-        </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>SYMBOL</th>
-                    <th>TOTAL BUY QTY</th>
-                    <th>TOTAL BUY VALUE</th>
-                    <th>TOTAL SELL QTY</th>
-                    <th>TOTAL SELL VALUE</th>
-                    <th>BALANCE QTY</th>
-                    <th>ACQUISITION COST</th>
-                    <th>% HOLDING</th>
-                    <th>LTP</th>
-                    <th>CURRENT VALUE</th>
-                    <th>REALISED PROFIT / LOSS</th>
-                    <th>UN-REALISED PROFIT / LOSS</th>
-                    <th>TOTAL PROFIT / LOSS</th>
-                    <th>52WK HIGH</th>
-                    <th>52WK LOW</th>
-                </tr>
-            </thead>
-            <tbody>"""
+            .header {{
+                margin-bottom: 20px;
+                padding-bottom: 15px;
+                
+            }}
+            .portfolio-title {{
+                font-size: 18px;
+                color: #331866;
+                margin-bottom: 8px;
+                font-weight: bold;
+                word-break: break-word;
+            }}
+            .portfolio-description {{
+                font-size: 14px;
+                color: #666;
+                margin-bottom: 5px;
+                line-height: 1.4;
+                word-break: break-word;
+            }}
+            .date {{
+                font-size: 12px;
+                color: #999;
+                text-align: right;
+            }}
+            table {{
+                width: 100%;
+                border-collapse: collapse;
+                table-layout: fixed;
+            }}
+            th {{
+                background-color: #331866;
+                color: white;
+                padding: 10px 4px;
+                text-align: center;
+                font-weight: bold;
+                border: 1px solid #444;
+                font-size: 10px;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                line-height: 1.2;
+            }}
+            td {{
+                padding: 8px 4px;
+                text-align: right;
+                border: 1px solid #ddd;
+                font-size: 10px;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                line-height: 1.2;
+            }}
+            .symbol {{
+                text-align: left;
+                font-weight: bold;
+                color: #0d6efd;
+            }}
+            tr:nth-child(even) {{
+                background-color: #f9f9f9;
+            }}
+            .total-row {{
+                background-color: #e8f4f8 !important;
+                font-weight: bold;
+                border-top: 2px solid #333;
+            }}
+            .total-row td {{
+                font-weight: bold;
+            }}
+            .positive {{
+                color: #28a745;
+            }}
+            .negative {{
+                color: #dc3545;
+            }}
+            .cell-color {{
+                text-align: center;
+                color: #3B3B3D;
+            }}
+            .ltp {{
+                color: #0d6efd;
+            }}
+            .unrealised {{
+                color: #28a745;
+            }}
+            
+            /* Set specific column widths for better fit */
+            th:nth-child(1), td:nth-child(1) {{ /* SYMBOL */
+                width: 8%;
+                min-width: 60px;
+                max-width: 80px;
+            }}
+            th:nth-child(2), td:nth-child(2) {{ /* TOTAL BUY QTY */
+                width: 6%;
+                min-width: 50px;
+            }}
+            th:nth-child(3), td:nth-child(3) {{ /* TOTAL BUY VALUE */
+                width: 7%;
+                min-width: 60px;
+            }}
+            th:nth-child(4), td:nth-child(4) {{ /* TOTAL SELL QTY */
+                width: 6%;
+                min-width: 50px;
+            }}
+            th:nth-child(5), td:nth-child(5) {{ /* TOTAL SELL VALUE */
+                width: 7%;
+                min-width: 60px;
+            }}
+            th:nth-child(6), td:nth-child(6) {{ /* BALANCE QTY */
+                width: 6%;
+                min-width: 50px;
+            }}
+            th:nth-child(7), td:nth-child(7) {{ /* ACQUISITION COST */
+                width: 7%;
+                min-width: 60px;
+            }}
+            th:nth-child(8), td:nth-child(8) {{ /* % HOLDING */
+                width: 5%;
+                min-width: 40px;
+            }}
+            th:nth-child(9), td:nth-child(9) {{ /* LTP */
+                width: 5%;
+                min-width: 40px;
+            }}
+            th:nth-child(10), td:nth-child(10) {{ /* CURRENT VALUE */
+                width: 7%;
+                min-width: 60px;
+            }}
+            th:nth-child(11), td:nth-child(11) {{ /* REALISED PROFIT/LOSS */
+                width: 8%;
+                min-width: 70px;
+            }}
+            th:nth-child(12), td:nth-child(12) {{ /* UN-REALISED PROFIT/LOSS */
+                width: 8%;
+                min-width: 70px;
+            }}
+            th:nth-child(13), td:nth-child(13) {{ /* TOTAL PROFIT/LOSS */
+                width: 7%;
+                min-width: 60px;
+            }}
+            th:nth-child(14), td:nth-child(14) {{ /* 52WK HIGH */
+                width: 6%;
+                min-width: 50px;
+            }}
+            th:nth-child(15), td:nth-child(15) {{ /* 52WK LOW */
+                width: 6%;
+                min-width: 50px;
+            }}
+            
+            /* Mobile-specific optimizations */
+            @media screen and (max-width: 768px) {{
+                body {{
+                    padding: 5px;
+                }}
+                .container {{
+                    padding: 8px;
+                }}
+                .portfolio-title {{
+                    font-size: 16px;
+                }}
+                table {{
+                    font-size: 9px;
+                }}
+                th, td {{
+                    padding: 6px 2px;
+                    font-size: 9px;
+                }}
+                th {{
+                    font-size: 9px;
+                    padding: 8px 2px;
+                }}
+                
+                /* Shorter column headers for mobile */
+                th:nth-child(11):before {{ content: "R P/L"; }}
+                th:nth-child(12):before {{ content: "UR P/L"; }}
+                th:nth-child(13):before {{ content: "T P/L"; }}
+                th:nth-child(14):before {{ content: "52H"; }}
+                th:nth-child(15):before {{ content: "52L"; }}
+                
+                th:nth-child(11) span,
+                th:nth-child(12) span,
+                th:nth-child(13) span,
+                th:nth-child(14) span,
+                th:nth-child(15) span {{
+                    display: none;
+                }}
+            }}
+            
+            /* Tablet optimizations */
+            @media screen and (min-width: 769px) and (max-width: 1024px) {{
+                body {{
+                    padding: 10px;
+                }}
+                .container {{
+                    padding: 15px;
+                }}
+                table {{
+                    font-size: 10px;
+                }}
+                th, td {{
+                    padding: 8px 3px;
+                    font-size: 10px;
+                }}
+            }}
+            
+            /* Desktop */
+            @media screen and (min-width: 1025px) {{
+                body {{
+                    padding: 20px;
+                }}
+                .container {{
+                    max-width: 1800px;
+                    margin: 0 auto;
+                    padding: 25px;
+                    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                }}
+                table {{
+                    font-size: 11px;
+                }}
+                th, td {{
+                    padding: 10px 5px;
+                    font-size: 11px;
+                }}
+                
+                /* Show full column headers on desktop */
+                th:nth-child(11):before,
+                th:nth-child(12):before,
+                th:nth-child(13):before,
+                th:nth-child(14):before,
+                th:nth-child(15):before {{
+                    display: none;
+                }}
+                th:nth-child(11) span,
+                th:nth-child(12) span,
+                th:nth-child(13) span,
+                th:nth-child(14) span,
+                th:nth-child(15) span {{
+                    display: inline;
+                }}
+            }}
+            
+            /* Very small phones */
+            @media screen and (max-width: 480px) {{
+                body {{
+                    padding: 2px;
+                }}
+                .container {{
+                    padding: 5px;
+                }}
+                table {{
+                    font-size: 8px;
+                }}
+                th, td {{
+                    padding: 4px 1px;
+                    font-size: 8px;
+                }}
+                th {{
+                    padding: 6px 1px;
+                }}
+                
+                /* Even shorter headers for very small screens */
+                th:nth-child(3):before {{ content: "B VAL"; }}
+                th:nth-child(5):before {{ content: "S VAL"; }}
+                th:nth-child(7):before {{ content: "ACQ"; }}
+                th:nth-child(10):before {{ content: "C VAL"; }}
+                
+                th:nth-child(3) span,
+                th:nth-child(5) span,
+                th:nth-child(7) span,
+                th:nth-child(10) span {{
+                    display: none;
+                }}
+            }}
+            
+            /* Print styles */
+            @media print {{
+                body {{
+                    background-color: white;
+                    padding: 0;
+                    margin: 0;
+                }}
+                .container {{
+                    box-shadow: none;
+                    padding: 10px;
+                    width: 100%;
+                }}
+                table {{
+                    width: 100%;
+                    font-size: 8pt;
+                }}
+                th, td {{
+                    padding: 4px 2px;
+                    border: 1px solid #000;
+                }}
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <div>CURRENT PORTFOLIO: {portfolio_name.upper()}</div>
+                <div style="text-align:right">{description}</div>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>SYMBOL</th>
+                        <th>TOTAL BUY QTY</th>
+                        <th><span>TOTAL BUY VALUE</span></th>
+                        <th>TOTAL SELL QTY</th>
+                        <th><span>TOTAL SELL VALUE</span></th>
+                        <th>BALANCE QTY</th>
+                        <th><span>ACQUISITION COST</span></th>
+                        <th>% HOLDING</th>
+                        <th>LTP</th>
+                        <th><span>CURRENT VALUE</span></th>
+                        <th><span>REALISED PROFIT/ LOSS</span></th>
+                        <th><span>UN-REALISED PROFIT/ LOSS</span></th>
+                        <th><span>TOTAL PROFIT/ LOSS</span></th>
+                        <th><span>52WK HIGH</span></th>
+                        <th><span>52WK LOW</span></th>
+                    </tr>
+                </thead>
+                <tbody>"""
         
         # Add rows for each stock
         for stock in stocks:
-            # LTP (Last Traded Price) - use sell_price if available, otherwise buy_price
-            sell_price = to_decimal(stock.sell_price)
-            buy_price = to_decimal(stock.buy_price)
-            ltp = sell_price if sell_price > 0 else buy_price
-
-            
-            # Calculate realised profit/loss: total_sell_value - (proportion of buy_value for sold shares)
+            # Calculate realised profit/loss
             buy_qty = to_int(stock.total_buy_qty)
             sell_qty = to_int(stock.total_sell_qty)
             buy_value = to_decimal(stock.total_buy_value)
@@ -372,7 +565,6 @@ class StockTradeViewSet(viewsets.ModelViewSet):
             else:
                 realised_pl = Decimal('0.00')
 
-            
             unrealised_pl = Decimal('0.00')
             total_pl = realised_pl + unrealised_pl
             
@@ -380,23 +572,23 @@ class StockTradeViewSet(viewsets.ModelViewSet):
             profit_sign = "+" if total_pl >= 0 else ""
             
             html += f"""
-                <tr>
-                    <td class="symbol">{stock.symbol}</td>
-                    <td class="cell-color">{to_int(stock.total_buy_qty):,}</td>
-                    <td class="cell-color">{format_number(stock.total_buy_value)}</td>
-                    <td class="cell-color">{to_int(stock.total_sell_qty):,}</td>
-                    <td class="cell-color">{format_number(stock.total_sell_value)}</td>
-                    <td class="cell-color">{to_int(stock.balance_qty):,}</td>
-                    <td class="cell-color">{format_number(stock.acquisition_cost)}</td>
-                    <td class="cell-color">{format_number(stock.percent_holding)}</td>
-                    <td class="ltp" style="text-align: center"  >{format_number(ltp)}</td>
-                    <td class="cell-color">{format_number(stock.current_value)}</td>
-                    <td class="cell-color">{profit_sign}{format_number(realised_pl)}</td>
-                    <td class="unrealised" style="text-align: center">{format_number(unrealised_pl)}</td>
-                    <td class="{profit_class}" style="text-align: center">{profit_sign}{format_number(total_pl)}</td>
-                    <td class="cell-color" style="text-align: center">{format_number(stock.wk_52_high)}</td>
-                    <td class="cell-color" style="text-align: center">{format_number(stock.wk_52_low)}</td>
-                </tr>"""
+                    <tr>
+                        <td class="symbol">{stock.symbol}</td>
+                        <td class="cell-color">{to_int(stock.total_buy_qty):,}</td>
+                        <td class="cell-color">{format_number(stock.total_buy_value)}</td>
+                        <td class="cell-color">{to_int(stock.total_sell_qty):,}</td>
+                        <td class="cell-color">{format_number(stock.total_sell_value)}</td>
+                        <td class="cell-color">{to_int(stock.balance_qty):,}</td>
+                        <td class="cell-color">{format_number(stock.acquisition_cost)}</td>
+                        <td class="cell-color">{format_number(stock.percent_holding)}</td>
+                        <td style="text-align:center" class="ltp">{format_number(stock.ltp)}</td>
+                        <td class="cell-color">{format_number(stock.current_value)}</td>
+                        <td class="cell-color">{profit_sign}{format_number(realised_pl)}</td>
+                        <td class="cell-color unrealised">{format_number(unrealised_pl)}</td>
+                        <td style="text-align:center" class="{profit_class}">{profit_sign}{format_number(total_pl)}</td>
+                        <td class="cell-color">{format_number(stock.wk_52_high)}</td>
+                        <td class="cell-color">{format_number(stock.wk_52_low)}</td>
+                    </tr>"""
         
         # Add total row
         total_unrealised_pl = Decimal('0.00')
@@ -404,34 +596,34 @@ class StockTradeViewSet(viewsets.ModelViewSet):
         profit_class = "positive" if total_profit_loss >= 0 else "negative"
         profit_sign = "+" if total_profit_loss >= 0 else ""
         
+        # Calculate total balance qty
+        total_balance_qty = total_buy_qty - total_sell_qty
+        
         html += f"""
-                <tr class="total-row">
-                    <td style="text-align: left">TOTAL</td>
-                    <td style="text-align: center">{int(clean_number(stock.total_buy_qty)):,}</td>
-
-                    <td style="text-align: center">{format_number(total_buy_value)}</td>
-                    <td style="text-align: center">{total_sell_qty:,}</td>
-                    <td style="text-align: center">{format_number(total_sell_value)}</td>
-                    <td style="text-align: center">0</td>
-                    <td style="text-align: center">0.00</td>
-                    <td style="text-align: center">0.00</td>
-                    <td style="text-align: center"></td>
-                    <td style="text-align: center">0.00</td>
-                    <td style="text-align: center" class="{profit_class}">{profit_sign}{format_number(total_realised_profit_loss)}</td>
-                    <td style="text-align: center">{format_number(total_unrealised_pl)}</td>
-                    <td style="text-align: center" class="{profit_class}">{profit_sign}{format_number(total_profit_loss)}</td>
-                    <td style="text-align: center"></td>
-                    <td style="text-align: center"></td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</body>
-</html>"""
+                    <tr class="total-row">
+                        <td class="symbol">TOTAL</td>
+                        <td style="text-align: center">{total_buy_qty:,}</td>
+                        <td style="text-align: center">{format_number(total_buy_value)}</td>
+                        <td style="text-align: center">{total_sell_qty:,}</td>
+                        <td style="text-align: center">{format_number(total_sell_value)}</td>
+                        <td style="text-align: center">0</td>
+                        <td style="text-align: center">0.00</td>
+                        <td style="text-align: center">0.00</td>
+                        <td style="text-align: center">0.00</td>
+                        <td></td>
+                        <td style="text-align: center" class="{profit_class}">{profit_sign}{format_number(total_realised_profit_loss)}</td>
+                        <td style="text-align: center">0.00</td>
+                        <td style="text-align: center" class="{profit_class}">{profit_sign}{format_number(total_profit_loss)}</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </body>
+    </html>"""
         
         return html
-
-
 class PortfolioViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing portfolios
