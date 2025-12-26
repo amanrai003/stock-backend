@@ -143,7 +143,26 @@ class StockTradeViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], permission_classes=[])
     def download_report(self, request):
         """Download HTML report of all stock trades"""
-        stocks = StockTrade.objects.all().order_by('symbol')
+        # Get portfolio_id from query parameters
+        portfolio_id = request.query_params.get('portfolio_id')
+        
+        if portfolio_id:
+            # Filter stocks by specific portfolio
+            try:
+                portfolio = Portfolio.objects.get(id=portfolio_id)
+                stocks = StockTrade.objects.filter(portfolio=portfolio).order_by('symbol')
+                portfolio_name = portfolio.name
+                description = portfolio.description or ""
+            except Portfolio.DoesNotExist:
+                return Response(
+                    {'error': f'Portfolio with ID {portfolio_id} not found'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            # Get all stocks
+            stocks = StockTrade.objects.all().order_by('symbol')
+            portfolio_name = "ALL PORTFOLIOS"
+            description = "Combined report of all portfolios"
 
         # ---- SAFE TOTAL CALCULATIONS ----
         total_buy_qty = sum(to_int(s.total_buy_qty) for s in stocks)
@@ -157,28 +176,19 @@ class StockTradeViewSet(viewsets.ModelViewSet):
         for stock in stocks:
             buy_qty = int(clean_number(stock.total_buy_qty))
             sell_qty = int(clean_number(stock.total_sell_qty))
-
             buy_value = clean_number(stock.total_buy_value)
             sell_value = clean_number(stock.total_sell_value)
-
 
             if buy_qty > 0 and sell_qty > 0:
                 avg_buy_price = buy_value / buy_qty
                 buy_value_for_sold = avg_buy_price * sell_qty
                 total_realised_profit_loss += sell_value - buy_value_for_sold
 
-        # ---- PORTFOLIO META ----
+        # ---- DATE TIME ----
         if stocks.exists():
             first_stock = stocks.first()
-            description = first_stock.portfolio.description
-            portfolio_name = (
-                first_stock.portfolio.name
-                if first_stock.portfolio
-                else "CURRENT PORTFOLIO"
-            )
             date_time = first_stock.date_time_field or first_stock.format_date_time()
         else:
-            portfolio_name = "CURRENT PORTFOLIO"
             date_time = ""
 
         html_content = self._generate_html_report(
@@ -609,8 +619,8 @@ class StockTradeViewSet(viewsets.ModelViewSet):
                         <td style="text-align: center">0</td>
                         <td style="text-align: center">0.00</td>
                         <td style="text-align: center">0.00</td>
-                        <td style="text-align: center">0.00</td>
                         <td></td>
+                        <td style="text-align: center">0.00</td>
                         <td style="text-align: center" class="{profit_class}">{profit_sign}{format_number(total_realised_profit_loss)}</td>
                         <td style="text-align: center">0.00</td>
                         <td style="text-align: center" class="{profit_class}">{profit_sign}{format_number(total_profit_loss)}</td>
