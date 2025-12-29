@@ -331,7 +331,7 @@ class StockTradeViewSet(viewsets.ModelViewSet):
                 min-width: 50px;
             }}
             th:nth-child(3), td:nth-child(3) {{ /* TOTAL BUY VALUE */
-                width: 7%;
+                width: 9%;
                 min-width: 60px;
             }}
             th:nth-child(4), td:nth-child(4) {{ /* TOTAL SELL QTY */
@@ -339,7 +339,7 @@ class StockTradeViewSet(viewsets.ModelViewSet):
                 min-width: 50px;
             }}
             th:nth-child(5), td:nth-child(5) {{ /* TOTAL SELL VALUE */
-                width: 7%;
+                width: 9%;
                 min-width: 60px;
             }}
             th:nth-child(6), td:nth-child(6) {{ /* BALANCE QTY */
@@ -347,7 +347,7 @@ class StockTradeViewSet(viewsets.ModelViewSet):
                 min-width: 50px;
             }}
             th:nth-child(7), td:nth-child(7) {{ /* ACQUISITION COST */
-                width: 7%;
+                width: 6%;
                 min-width: 60px;
             }}
             th:nth-child(8), td:nth-child(8) {{ /* % HOLDING */
