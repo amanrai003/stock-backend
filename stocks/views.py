@@ -621,8 +621,8 @@ class StockTradeViewSet(viewsets.ModelViewSet):
                         <td style="text-align: center">0.00</td>
                         <td></td>
                         <td style="text-align: center">0.00</td>
-                        <td style="text-align: center" class="{profit_class}">{profit_sign}{format_number(total_realised_profit_loss)}</td>
-                        <td style="text-align: center">0.00</td>
+                        <td style="text-align: center">{profit_sign}{format_number(total_realised_profit_loss)}</td>
+                        <td style="text-align: center" class="unrealised">0.00</td>
                         <td style="text-align: center" class="{profit_class}">{profit_sign}{format_number(total_profit_loss)}</td>
                         <td></td>
                         <td></td>
